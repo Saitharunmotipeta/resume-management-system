@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 
 const UploadResume = () => {
@@ -9,8 +9,25 @@ const UploadResume = () => {
   const [message, setMessage] = useState("");
   const [score, setScore] = useState(null);
   const [summary, setSummary] = useState("");
+  const [existingResume, setExistingResume] = useState(null); // ✅ track if already submitted
+
+  const token = localStorage.getItem("access_token");
 
   const handleFileChange = (e) => setFile(e.target.files[0]);
+
+  // ✅ Check if resume already exists for this job
+  useEffect(() => {
+    if (!jobId || !token) return;
+
+    axios
+      .get(`http://localhost:8000/resumes/${jobId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => {
+        setExistingResume(res.data); // backend should return { fileName, score, summary }
+      })
+      .catch(() => setExistingResume(null));
+  }, [jobId, token]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -24,12 +41,6 @@ const UploadResume = () => {
     formData.append("job_id", jobId);
     formData.append("email", email);
     formData.append("phone", phone);
-
-    const token = localStorage.getItem("access_token"); // ✅ match AuthContext
-    if (!token) {
-      setMessage("You must be logged in to upload a resume.");
-      return;
-    }
 
     try {
       const { data } = await axios.post(
@@ -46,6 +57,7 @@ const UploadResume = () => {
       setMessage(data.msg);
       setScore(data.score);
       setSummary(data.summary);
+      setExistingResume(data); // ✅ mark resume as submitted
     } catch (error) {
       if (error.response) {
         setMessage(`Error: ${error.response.data.detail || error.response.status}`);
@@ -55,36 +67,63 @@ const UploadResume = () => {
     }
   };
 
+  const handleUnsubmit = async () => {
+    if (!window.confirm("Are you sure you want to unsubmit your resume?")) return;
+
+    try {
+      await axios.delete(`http://localhost:8000/resumes/${jobId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setExistingResume(null);
+      setMessage("Resume removed. You can now upload another.");
+      setScore(null);
+      setSummary("");
+    } catch (error) {
+      setMessage("Failed to unsubmit resume.");
+    }
+  };
+
   return (
     <div style={{ maxWidth: "500px", margin: "auto" }}>
       <h2>Upload Resume</h2>
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: "10px" }}>
-          <label>Resume (PDF only): </label>
-          <input type="file" accept="application/pdf" onChange={handleFileChange} />
+
+      {existingResume ? (
+        // ✅ If already submitted
+        <div>
+          <p>✅ Resume submitted for Job ID: {jobId}</p>
+          <p><strong>Match Score:</strong> {existingResume.score}</p>
+          <p><strong>Summary:</strong> {existingResume.summary}</p>
+          <button
+            onClick={handleUnsubmit}
+            style={{ background: "red", color: "white", padding: "5px 10px", marginTop: "10px" }}
+          >
+            Unsubmit Resume
+          </button>
         </div>
-        <div style={{ marginBottom: "10px" }}>
-          <label>Job ID: </label>
-          <input type="number" value={jobId} onChange={(e) => setJobId(e.target.value)} />
-        </div>
-        <div style={{ marginBottom: "10px" }}>
-          <label>Email: </label>
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-        </div>
-        <div style={{ marginBottom: "10px" }}>
-          <label>Phone: </label>
-          <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
-        </div>
-        <button type="submit" style={{ padding: "5px 10px" }}>Upload</button>
-      </form>
+      ) : (
+        // ✅ If not submitted yet
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: "10px" }}>
+            <label>Resume (PDF only): </label>
+            <input type="file" accept="application/pdf" onChange={handleFileChange} />
+          </div>
+          <div style={{ marginBottom: "10px" }}>
+            <label>Job ID: </label>
+            <input type="number" value={jobId} onChange={(e) => setJobId(e.target.value)} />
+          </div>
+          <div style={{ marginBottom: "10px" }}>
+            <label>Email: </label>
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+          </div>
+          <div style={{ marginBottom: "10px" }}>
+            <label>Phone: </label>
+            <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
+          </div>
+          <button type="submit" style={{ padding: "5px 10px" }}>Upload</button>
+        </form>
+      )}
 
       {message && <p style={{ marginTop: "15px", fontWeight: "bold" }}>{message}</p>}
-      {score !== null && (
-        <div style={{ marginTop: "10px" }}>
-          <p><strong>Match Score:</strong> {score}</p>
-          <p><strong>Summary:</strong> {summary}</p>
-        </div>
-      )}
     </div>
   );
 };

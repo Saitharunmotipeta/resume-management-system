@@ -1,0 +1,17 @@
+# Python
+backend/_pycache_/
+backend/*.pyc
+
+# FastAPI env & secrets
+backend/.env
+
+# Database file
+backend/hirewise.db
+
+# Node & React
+frontend/node_modules/
+frontend/dist/
+
+# System files
+.DS_Store
+*.log

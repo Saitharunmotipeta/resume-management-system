@@ -38,15 +38,25 @@ export default function JobDetail () {
       <h1 className="text-xl font-semibold">{job.title}</h1>
       <p className="whitespace-pre-wrap">{job.description}</p>
       <div className="text-sm text-gray-500">Vacancies: {job.vacancies}</div>
+
       {user?.role === 'student' && (
         <div className="flex gap-3">
           <button className="btn" onClick={apply}>Apply</button>
-          <Link className="btn bg-green-600 hover:bg-green-700" to="/resume/upload">Upload Resume for this Job</Link>
+          <Link className="btn bg-green-600 hover:bg-green-700" to="/resume/upload">
+            Upload Resume for this Job
+          </Link>
         </div>
       )}
+
       {user?.role === 'hr' && (
-        <Link className="btn" to={`/hr/jobs/${id}/applicants`}>View Applicants</Link>
+        <div className="flex gap-3">
+          {/* ✅ Fixed route: use /resumes instead of /applicants */}
+          <Link className="btn bg-blue-600 hover:bg-blue-700" to={`/hr/jobs/${id}/resumes`}>
+            View Resumes & Analyse
+          </Link>
+        </div>
       )}
+
       {status && <div className="text-green-700">{status}</div>}
     </div>
   )

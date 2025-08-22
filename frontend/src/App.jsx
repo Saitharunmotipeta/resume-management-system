@@ -18,6 +18,10 @@ import Shortlisted from './pages/manager/Shortlisted.jsx'
 import AdminMetrics from './pages/admin/AdminMetrics.jsx'
 import AdminManage from './pages/admin/AdminManage.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
+import JobResumes from './pages/jobs/JobResumes.jsx'
+
+// 🔹 NEW: Student Applications page
+import MyApplications from './pages/student/MyApplications.jsx'
 
 // Simple fallback pages
 const UnauthorizedPage = () => (
@@ -52,6 +56,8 @@ export default function App() {
             <Route path="/student" element={<DashboardStudent />} />
             <Route path="/resume/upload" element={<UploadResume />} />
             <Route path="/resumes/mine" element={<MyResumes />} />
+            {/* 🔹 New route */}
+            <Route path="/student/applications" element={<MyApplications />} />
           </Route>
 
           {/* HR routes */}
@@ -60,6 +66,7 @@ export default function App() {
             <Route path="/hr/jobs/new" element={<PostJob />} />
             <Route path="/hr/jobs/:id/applicants" element={<Applicants />} />
             <Route path="/hr/shortlist" element={<Shortlist />} />
+            <Route path="/hr/jobs/:id/resumes" element={<JobResumes />} />
           </Route>
 
           {/* Manager routes */}
