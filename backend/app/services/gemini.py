@@ -4,15 +4,20 @@ import json
 import re
 from dotenv import load_dotenv
 
+# Load environment variables from .env
 load_dotenv()
 
+# Fetch API key
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+
+if not OPENROUTER_API_KEY:
+    raise ValueError("❌ OPENROUTER_API_KEY not found. Please set it in your .env file.")
 
 def clean_json_response(raw_text: str) -> str:
     """
     Extract and clean a JSON string from model output.
     """
-    # Extract JSON block if model wrapped it with ```json ... ```
+    # Extract JSON block if wrapped with { ... }
     json_match = re.search(r'\{.*\}', raw_text, re.DOTALL)
     if json_match:
         raw_text = json_match.group(0)
@@ -25,7 +30,9 @@ def clean_json_response(raw_text: str) -> str:
 def match_resume_to_job(resume_text: str, job_description: str) -> dict:
     headers = {
         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "HTTP-Referer": "http://localhost:8000",  # Optional but recommended by OpenRouter
+        "X-Title": "Resume Matcher"
     }
 
     prompt = f"""
@@ -66,7 +73,7 @@ Resume:
         result = response.json()
         content = result["choices"][0]["message"]["content"]
 
-        # Clean and parse
+        # Clean and parse JSON
         cleaned = clean_json_response(content)
         return json.loads(cleaned)
 

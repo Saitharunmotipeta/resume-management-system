@@ -12,13 +12,18 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# --- CORS setup ---
+origins = [
+    "http://localhost:5173",   # local Vite/React
+    "http://127.0.0.1:5173",  # alternate local
+    # "https://yourdomain.com",  # add prod frontend here
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  
+    allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["*"],   # all methods (GET, POST, PUT, DELETE)
+    allow_headers=["*"],   # all headers (Auth, Content-Type, etc.)
 )
 
 # --- Register Routes ---
@@ -28,6 +33,7 @@ app.include_router(resume_routes.router, prefix="/resumes", tags=["Resumes"])
 
 # --- DB Setup ---
 Base.metadata.create_all(bind=engine)
+# Base.metadata.drop_all(bind=engine)
 print("✅ All tables created.")
 
 # --- Root route ---
@@ -63,3 +69,4 @@ def custom_openapi():
     return app.openapi_schema
 
 app.openapi = custom_openapi
+

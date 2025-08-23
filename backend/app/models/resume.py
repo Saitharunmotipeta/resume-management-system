@@ -33,3 +33,4 @@ class Resume(Base):
     # Relationships
     uploader = relationship("User", back_populates="resumes_uploaded", foreign_keys=[uploaded_by_id])
     job = relationship("Job", back_populates="resumes")
+    interview = relationship("Interview", back_populates="resume", uselist=False)

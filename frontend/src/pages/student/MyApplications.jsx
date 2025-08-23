@@ -10,8 +10,7 @@ export default function MyApplications () {
     setLoading(true)
     setError(null)
     try {
-      // Backend endpoint must return all applications of the current student
-      const { data } = await api.get('/applications/me')
+      const { data } = await api.get('/resumes/applications/me')
       setItems(data || [])
     } catch (e) {
       setError(e?.response?.data?.detail || 'Failed to load applications')

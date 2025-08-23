@@ -12,10 +12,14 @@ from app.models.user import User, UserRole
 from app.schemas.resume import ResumeOut
 from app.services.gemini import match_resume_to_job
 from app.auth.auth_utils import get_current_user, require_role
+from app.schemas.interview import ScheduleRequest
+
 
 router = APIRouter(tags=["Resumes"])
 
+# -------------------------------
 # Upload resume — only students
+# -------------------------------
 @router.post("/upload", response_model=dict)
 def upload_resume(
     file: UploadFile = File(...),
@@ -70,7 +74,10 @@ def upload_resume(
         "summary": resume.match_summary
     }
 
-# HR/Manager/Admin can view resumes for a job
+
+# -------------------------------
+# HR/Manager/Admin — view resumes
+# -------------------------------
 @router.get("/job/{job_id}", response_model=List[ResumeOut])
 def get_resumes_for_job(
     job_id: int,
@@ -80,14 +87,7 @@ def get_resumes_for_job(
 ):
     query = db.query(Resume).filter(Resume.job_id == job_id)
 
-    # Managers: show shortlisted by default, but allow override with query param
-    if current_user.role == UserRole.manager:
-        if shortlisted_only:   # Manager explicitly asked for shortlisted only
-            query = query.filter(Resume.shortlisted == "yes")
-        # else: Manager can see all resumes as well
-
-    # HR/Admin: can use query param to filter
-    elif shortlisted_only:
+    if shortlisted_only:
         query = query.filter(Resume.shortlisted == "yes")
 
     resumes = query.all()
@@ -99,7 +99,9 @@ def get_resumes_for_job(
     return resumes
 
 
+# -------------------------------
 # Re-run AI match — HR only
+# -------------------------------
 @router.post("/match/{resume_id}")
 def match_resume_again(
     resume_id: int,
@@ -125,7 +127,10 @@ def match_resume_again(
 
     return {"msg": "Re-matched successfully", "score": resume.match_score}
 
-# Shortlist a resume — HR only
+
+# -------------------------------
+# Shortlist & Reject — HR only
+# -------------------------------
 @router.post("/shortlist/{resume_id}")
 def shortlist_resume(
     resume_id: int,
@@ -135,14 +140,13 @@ def shortlist_resume(
     resume = db.query(Resume).filter(Resume.id == resume_id).first()
     if not resume:
         raise HTTPException(status_code=404, detail="Resume not found")
-
     resume.shortlisted = "yes"
     db.commit()
     return {"msg": f"Resume ID {resume_id} shortlisted"}
 
-# Remove shortlist — HR only
-@router.post("/unshortlist/{resume_id}")
-def unshortlist_resume(
+
+@router.post("/reject/{resume_id}")
+def reject_resume(
     resume_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role([UserRole.hr]))
@@ -150,12 +154,14 @@ def unshortlist_resume(
     resume = db.query(Resume).filter(Resume.id == resume_id).first()
     if not resume:
         raise HTTPException(status_code=404, detail="Resume not found")
-
     resume.shortlisted = "no"
     db.commit()
-    return {"msg": f"Resume ID {resume_id} removed from shortlist"}
+    return {"msg": f"Resume ID {resume_id} rejected"}
 
-# Delete — by student (own) or admin
+
+# -------------------------------
+# Delete Resume — Student (own) or Admin
+# -------------------------------
 @router.delete("/{resume_id}")
 def delete_resume(
     resume_id: int,
@@ -173,7 +179,10 @@ def delete_resume(
     db.commit()
     return {"msg": f"Resume ID {resume_id} deleted"}
 
-# Get my own resumes (Student only)
+
+# -------------------------------
+# Student — My Resumes
+# -------------------------------
 @router.get("/my", response_model=List[ResumeOut])
 def get_my_resumes(
     db: Session = Depends(get_db),
@@ -184,3 +193,76 @@ def get_my_resumes(
         resume.match_points = json.loads(resume.match_points or "[]")
         resume.match_flags = json.loads(resume.match_flags or "[]")
     return resumes
+
+
+from app.models.interview import Interview
+
+@router.get("/applications/me")
+def get_my_applications(
+    db: Session = Depends(get_db),
+    user: User = Depends(require_role([UserRole.student]))
+):
+    apps = (
+        db.query(Resume, Job, Interview)
+        .join(Job, Resume.job_id == Job.id)
+        .outerjoin(Interview, Resume.id == Interview.resume_id)
+        .filter(Resume.uploaded_by_id == user.id)
+        .all()
+    )
+
+    result = []
+    for resume, job, interview in apps:
+        result.append({
+            "id": resume.id,
+            "job_id": job.id,
+            "job_title": job.title,
+            "applied_at": resume.created_at,
+            "shortlisted": resume.shortlisted == "yes",
+            "interview_at": interview.scheduled_at if interview else None,
+            "interview_mode": interview.mode if interview else None,
+            "interview_venue": interview.venue if interview else None,
+        })
+
+    return result
+
+
+# -------------------------------
+# Schedule Interview — HR/Manager/Admin
+# -------------------------------
+@router.post("/interviews/schedule/{job_id}")
+def schedule_interview(
+    job_id: int,
+    schedule: ScheduleRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role([UserRole.hr, UserRole.manager, UserRole.admin]))
+):
+    shortlisted = db.query(Resume).filter(
+        Resume.job_id == job_id,
+        Resume.shortlisted == "yes"
+    ).all()
+
+    if not shortlisted:
+        raise HTTPException(status_code=404, detail="No shortlisted candidates")
+
+    created_interviews = []
+    for r in shortlisted:
+        interview = Interview(
+            resume_id=r.id,
+            scheduled_at=datetime.combine(schedule.date, schedule.time),
+            mode=schedule.mode,
+            venue=schedule.location,
+            created_at=datetime.utcnow()
+        )
+        db.add(interview)
+        created_interviews.append(interview)
+
+    db.commit()
+
+    return {
+        "message": f"Interview scheduled for {len(created_interviews)} candidates of job {job_id}",
+        "date": str(schedule.date),
+        "time": str(schedule.time),
+        "mode": schedule.mode,
+        "location": schedule.location
+    }
+
