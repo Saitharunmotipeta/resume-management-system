@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext.jsx'
 
-export default function Login () {
+export default function Login() {
   const { login, error, loading } = useAuth()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -15,7 +15,21 @@ export default function Login () {
     try {
       await login(username, password)
       navigate(from, { replace: true })
-    } catch {}
+    } catch {
+      /* error is handled in AuthContext */
+    }
+  }
+
+  // ✅ Normalize error for safe display
+  const renderError = (err) => {
+    if (!err) return null
+    if (Array.isArray(err)) {
+      return err.map((e, i) => <div key={i}>{e.msg || e}</div>)
+    }
+    if (typeof err === 'object') {
+      return err.msg || JSON.stringify(err)
+    }
+    return String(err)
   }
 
   return (
@@ -25,16 +39,39 @@ export default function Login () {
         <form className="space-y-3" onSubmit={onSubmit}>
           <div>
             <label className="label">Username</label>
-            <input className="input" value={username} onChange={(e) => setUsername(e.target.value)} required />
+            <input
+              className="input"
+              name="username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+            />
           </div>
           <div>
             <label className="label">Password</label>
-            <input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <input
+              className="input"
+              name="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
           </div>
-          {error && <div className="text-red-600 text-sm">{error}</div>}
-          <button className="btn w-full" disabled={loading}>{loading ? 'Signing in...' : 'Sign In'}</button>
+
+          {error && <div className="text-red-600 text-sm">{renderError(error)}</div>}
+
+          <button className="btn w-full" disabled={loading}>
+            {loading ? 'Signing in...' : 'Sign In'}
+          </button>
         </form>
-        <div className="text-sm mt-3">No account? <Link to="/register" className="link">Register</Link></div>
+
+        <div className="text-sm mt-3">
+          No account?{' '}
+          <Link to="/register" className="link">
+            Register
+          </Link>
+        </div>
       </div>
     </div>
   )

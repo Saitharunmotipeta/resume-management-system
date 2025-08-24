@@ -1,3 +1,4 @@
+// frontend/src/pages/Shortlist.jsx
 import React, { useEffect, useState } from "react";
 import api from "../../api/axios";
 
@@ -10,10 +11,7 @@ export default function Shortlist() {
   const [form, setForm] = useState({});
 
   const updateForm = (id, field, value) => {
-    setForm((prev) => ({
-      ...prev,
-      [id]: { ...(prev[id] || {}), [field]: value },
-    }));
+    setForm((prev) => ({ ...prev, [id]: { ...(prev[id] || {}), [field]: value } }));
   };
 
   const load = async () => {
@@ -23,17 +21,13 @@ export default function Shortlist() {
       const { data } = await api.get("/resumes/shortlisted");
       setItems(data || []);
     } catch (e) {
-      setError(
-        e?.response?.data?.detail || "Failed to load shortlisted candidates"
-      );
+      setError(e?.response?.data?.detail || "Failed to load shortlisted candidates");
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    load();
-  }, []);
+  useEffect(() => { load(); }, []);
 
   const schedule = async (resumeId) => {
     const f = form[resumeId] || {};
@@ -60,7 +54,7 @@ export default function Shortlist() {
     if (!filters.job) return true;
     const needle = filters.job.toLowerCase();
     return (
-      String(r.job_id).includes(needle) ||
+      String(r.job_id || "").includes(needle) ||
       (r.job_name || "").toLowerCase().includes(needle)
     );
   });
@@ -77,80 +71,71 @@ export default function Shortlist() {
           value={filters.job}
           onChange={(e) => setFilters({ ...filters, job: e.target.value })}
         />
-        <button className="btn" onClick={load}>
-          Refresh
-        </button>
+        <button className="btn" onClick={load}>Refresh</button>
       </div>
 
-      {filtered.length === 0 && (
-        <div className="card">No shortlisted candidates yet.</div>
-      )}
+      {filtered.length === 0 && <div className="card">No shortlisted candidates yet.</div>}
 
       {filtered.map((r) => (
-        <div key={r.id} className="card p-3 space-y-2">
+        <div key={r.resume_id} className="card p-3 space-y-2">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
               <div className="font-semibold">
-                Resume #{r.id} • Job {r.job_name || r.job_id}
+                Resume #{r.resume_id} • Job {r.job_name || r.job_id}
               </div>
               <div className="text-xs text-gray-500">
-                {r.email} · {r.phone}{" "}
+                {r.student_email} {r.student_name && <>· {r.student_name}</>}{" "}
                 {r.match_score != null && <>· Match: {r.match_score}</>}
               </div>
               <div className="text-sm">
-                Status: <span className="text-green-600">Shortlisted</span>
-                {r.interview_at && (
+                Status:{" "}
+                <span className={r.scheduled_at ? "text-blue-600" : "text-green-600"}>
+                  {r.scheduled_at ? "Interview scheduled" : "Shortlisted"}
+                </span>
+                {r.scheduled_at && (
                   <span className="ml-2 px-2 py-0.5 rounded bg-blue-100 text-blue-700">
-                    Interview: {new Date(r.interview_at).toLocaleString()}{" "}
-                    {r.interview_mode ? ` • ${r.interview_mode}` : ""}
+                    {new Date(r.scheduled_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
+                    {r.mode ? ` • ${r.mode}` : ""} {r.venue ? ` • ${r.venue}` : ""}
                   </span>
                 )}
               </div>
-              {r.feedback && (
-                <div className="text-xs text-gray-600">
-                  Feedback: {r.feedback}
-                </div>
-              )}
+              {r.feedback && <div className="text-xs text-gray-600">Feedback: {r.feedback}</div>}
             </div>
 
-            {/* Schedule form */}
             <div className="flex flex-col md:flex-row gap-2 items-start md:items-center">
-              <input
-                type="datetime-local"
-                className="input"
-                value={form[r.id]?.datetime || ""}
-                onChange={(e) => updateForm(r.id, "datetime", e.target.value)}
-                disabled={!!r.interview_at}
-              />
-              <select
-                className="input"
-                value={form[r.id]?.mode || ""}
-                onChange={(e) => updateForm(r.id, "mode", e.target.value)}
-                disabled={!!r.interview_at}
-              >
-                <option value="">Mode</option>
-                <option value="online">Online</option>
-                <option value="onsite">Onsite</option>
-              </select>
-              <input
-                className="input"
-                placeholder="Meet link / address (optional)"
-                value={form[r.id]?.venue || ""}
-                onChange={(e) => updateForm(r.id, "venue", e.target.value)}
-                disabled={!!r.interview_at}
-              />
-              {!r.interview_at ? (
-                <button
-                  className="btn bg-green-600 hover:bg-green-700 text-white"
-                  onClick={() => schedule(r.id)}
-                  disabled={savingId === r.id}
-                >
-                  {savingId === r.id ? "Scheduling…" : "Schedule"}
-                </button>
+              {!r.scheduled_at ? (
+                <>
+                  <input
+                    type="datetime-local"
+                    className="input"
+                    value={form[r.resume_id]?.datetime || ""}
+                    onChange={(e) => updateForm(r.resume_id, "datetime", e.target.value)}
+                  />
+                  <select
+                    className="input"
+                    value={form[r.resume_id]?.mode || ""}
+                    onChange={(e) => updateForm(r.resume_id, "mode", e.target.value)}
+                  >
+                    <option value="">Mode</option>
+                    <option value="online">Online</option>
+                    <option value="onsite">Onsite</option>
+                  </select>
+                  <input
+                    className="input"
+                    placeholder="Meet link / address (optional)"
+                    value={form[r.resume_id]?.venue || ""}
+                    onChange={(e) => updateForm(r.resume_id, "venue", e.target.value)}
+                  />
+                  <button
+                    className="btn bg-green-600 hover:bg-green-700 text-white"
+                    onClick={() => schedule(r.resume_id)}
+                    disabled={savingId === r.resume_id}
+                  >
+                    {savingId === r.resume_id ? "Scheduling…" : "Schedule"}
+                  </button>
+                </>
               ) : (
-                <span className="text-sm text-gray-500">
-                  Already scheduled
-                </span>
+                <span className="text-sm text-gray-500">Already scheduled</span>
               )}
             </div>
           </div>

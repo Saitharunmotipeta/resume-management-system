@@ -34,3 +34,19 @@ class ResumeOut(BaseModel):
 
     class Config:
         orm_mode = True
+
+class ShortlistedOut(BaseModel):
+    resume_id: int
+    job_id: int
+    job_name: Optional[str]
+    student_name: Optional[str]
+    student_email: Optional[str]
+    match_score: Optional[float]
+    status: str
+    feedback: Optional[str]
+    scheduled_at: Optional[datetime]
+    mode: Optional[str]
+    venue: Optional[str]
+
+    class Config:
+        orm_mode = True

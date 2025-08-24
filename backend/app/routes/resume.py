@@ -1,6 +1,7 @@
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends
+# backend/app/routes/resume.py
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends, Body
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 from datetime import datetime
 import fitz  # PyMuPDF
 import json
@@ -9,11 +10,11 @@ from app.database.connection import get_db
 from app.models.resume import Resume
 from app.models.job import Job
 from app.models.user import User, UserRole
+from app.models.interview import Interview
 from app.schemas.resume import ResumeOut
 from app.services.gemini import match_resume_to_job
 from app.auth.auth_utils import get_current_user, require_role
 from app.schemas.interview import ScheduleRequest
-
 
 router = APIRouter(tags=["Resumes"])
 
@@ -76,7 +77,7 @@ def upload_resume(
 
 
 # -------------------------------
-# HR/Manager/Admin — view resumes
+# HR/Manager/Admin — view resumes for a job (optionally shortlisted-only)
 # -------------------------------
 @router.get("/job/{job_id}", response_model=List[ResumeOut])
 def get_resumes_for_job(
@@ -195,8 +196,9 @@ def get_my_resumes(
     return resumes
 
 
-from app.models.interview import Interview
-
+# -------------------------------
+# Student — My Applications (with interview info)
+# -------------------------------
 @router.get("/applications/me")
 def get_my_applications(
     db: Session = Depends(get_db),
@@ -227,7 +229,47 @@ def get_my_applications(
 
 
 # -------------------------------
-# Schedule Interview — HR/Manager/Admin
+# HR/Manager/Admin — View all shortlisted resumes with interview info
+# -------------------------------
+@router.get("/shortlisted")
+def get_shortlisted(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role([UserRole.hr, UserRole.manager, UserRole.admin]))
+):
+    """
+    Return all resumes marked shortlisted == "yes" with optional interview info.
+    """
+    resumes = (
+        db.query(Resume)
+        .filter(Resume.shortlisted == "yes")
+        .all()
+    )
+
+    result = []
+    for r in resumes:
+        job = db.query(Job).filter(Job.id == r.job_id).first()
+        student = db.query(User).filter(User.id == r.uploaded_by_id).first()
+        interview = db.query(Interview).filter(Interview.resume_id == r.id).first()
+
+        result.append({
+            "resume_id": r.id,
+            "job_id": r.job_id,
+            "job_name": job.title if job else None,
+            "student_name": getattr(student, "name", None),
+            "student_email": getattr(student, "email", None),
+            "match_score": r.match_score,
+            "status": "interview scheduled" if interview else "shortlisted",
+            "feedback": getattr(r, "feedback", None),
+            "scheduled_at": interview.scheduled_at if interview else None,
+            "mode": interview.mode if interview else None,
+            "venue": interview.venue if interview else None,
+        })
+
+    return result
+
+
+# -------------------------------
+# Schedule Interview — HR/Manager/Admin (batch by job)
 # -------------------------------
 @router.post("/interviews/schedule/{job_id}")
 def schedule_interview(
@@ -246,23 +288,76 @@ def schedule_interview(
 
     created_interviews = []
     for r in shortlisted:
-        interview = Interview(
-            resume_id=r.id,
-            scheduled_at=datetime.combine(schedule.date, schedule.time),
-            mode=schedule.mode,
-            venue=schedule.location,
-            created_at=datetime.utcnow()
-        )
-        db.add(interview)
+        interview = db.query(Interview).filter(Interview.resume_id == r.id).first()
+        if interview:
+            # update
+            interview.scheduled_at = datetime.combine(schedule.date, schedule.time)
+            interview.mode = schedule.mode
+            interview.venue = schedule.location
+        else:
+            interview = Interview(
+                resume_id=r.id,
+                scheduled_at=datetime.combine(schedule.date, schedule.time),
+                mode=schedule.mode,
+                venue=schedule.location,
+                created_at=datetime.utcnow()
+            )
+            db.add(interview)
         created_interviews.append(interview)
 
     db.commit()
 
     return {
-        "message": f"Interview scheduled for {len(created_interviews)} candidates of job {job_id}",
+        "message": f"Interview scheduled/updated for {len(created_interviews)} candidates of job {job_id}",
         "date": str(schedule.date),
         "time": str(schedule.time),
         "mode": schedule.mode,
         "location": schedule.location
     }
 
+
+# -------------------------------
+# Schedule Interview — single resume (called by frontend schedule button)
+# -------------------------------
+@router.post("/{resume_id}/schedule")
+def schedule_interview_single(
+    resume_id: int,
+    payload: dict = Body(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role([UserRole.hr, UserRole.manager, UserRole.admin]))
+):
+    resume = db.query(Resume).filter(Resume.id == resume_id).first()
+    if not resume:
+        raise HTTPException(status_code=404, detail="Resume not found")
+    if resume.shortlisted != "yes":
+        raise HTTPException(status_code=400, detail="Candidate is not shortlisted")
+
+    dt_raw = payload.get("datetime")
+    mode = payload.get("mode")
+    venue = payload.get("venue", "")
+
+    if not dt_raw or not mode:
+        raise HTTPException(status_code=400, detail="`datetime` and `mode` are required")
+
+    try:
+        scheduled_at = datetime.fromisoformat(dt_raw)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid datetime format; expected ISO format (YYYY-MM-DDTHH:MM)")
+
+    interview = db.query(Interview).filter(Interview.resume_id == resume_id).first()
+    if interview:
+        interview.scheduled_at = scheduled_at
+        interview.mode = mode
+        interview.venue = venue
+    else:
+        interview = Interview(
+            resume_id=resume_id,
+            scheduled_at=scheduled_at,
+            mode=mode,
+            venue=venue,
+            created_at=datetime.utcnow()
+        )
+        db.add(interview)
+
+    db.commit()
+    return {"msg": "Interview scheduled successfully", "resume_id": resume_id, "scheduled_at": scheduled_at.isoformat()}

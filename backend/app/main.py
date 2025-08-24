@@ -1,10 +1,11 @@
+# backend/app/main.py
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 
-from app.database import Base, engine
-from app.models import user, job, resume
-from app.routes import auth, job as job_routes, resume as resume_routes
+from app.database.connection import Base, engine  # ensure this import is correct in your project
+from app.models import user, job, resume  # keep model imports if they're needed for metadata
+from app.routes import auth, job as job_routes, resume as resume_routes, admin
 
 app = FastAPI(
     title="HireWise API",
@@ -12,23 +13,24 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# --- CORS setup ---
 origins = [
-    "http://localhost:5173",   # local Vite/React
-    "http://127.0.0.1:5173",  # alternate local
-    # "https://yourdomain.com",  # add prod frontend here
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
 ]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"],   # all methods (GET, POST, PUT, DELETE)
-    allow_headers=["*"],   # all headers (Auth, Content-Type, etc.)
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # --- Register Routes ---
-app.include_router(auth.router, prefix="/auth")  # ✅ clean prefixing
+app.include_router(auth.router, prefix="/auth")
 app.include_router(job_routes.router, prefix="/jobs")
+app.include_router(admin.router, prefix="/admin")
 app.include_router(resume_routes.router, prefix="/resumes", tags=["Resumes"])
 
 # --- DB Setup ---
@@ -61,12 +63,13 @@ def custom_openapi():
         }
     }
 
-    for path in openapi_schema["paths"].values():
-        for method in path.values():
-            method["security"] = [{"BearerAuth": []}]
+    # Apply security to all routes except auth
+    for path, methods in openapi_schema["paths"].items():
+        for method in methods.values():
+            if not path.startswith("/auth"):
+                method["security"] = [{"BearerAuth": []}]
 
     app.openapi_schema = openapi_schema
     return app.openapi_schema
 
 app.openapi = custom_openapi
-

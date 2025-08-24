@@ -29,6 +29,7 @@ class Resume(Base):
     shortlisted = Column(String(10), default="no")  # yes / no
 
     created_at = Column(DateTime, default=datetime.utcnow)
+    status = Column(String, default="pending")
 
     # Relationships
     uploader = relationship("User", back_populates="resumes_uploaded", foreign_keys=[uploaded_by_id])

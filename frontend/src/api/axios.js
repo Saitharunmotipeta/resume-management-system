@@ -4,12 +4,12 @@ import axios from 'axios';
 // Create axios instance
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000',
-  withCredentials: false,
+  withCredentials: false, // ✅ using JWT in headers, not cookies
 });
 
 // Request interceptor → attach token
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('access_token'); // ✅ match AuthContext
+  const token = localStorage.getItem('access_token'); // ✅ same storage as AuthContext
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   } else {
@@ -18,15 +18,25 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Response interceptor → handle unauthorized
+// Response interceptor → handle unauthorized globally
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Token invalid/expired → clear storage and reload
+      // Token invalid/expired → clear storage and redirect
       localStorage.removeItem('access_token');
-      window.location.href = '/login'; // redirect to login page
+
+      // Prevent infinite redirect loop
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
     }
+
+    // Log errors in development for easier debugging
+    if (import.meta.env.MODE === 'development') {
+      console.error("API error:", error.response || error.message);
+    }
+
     return Promise.reject(error);
   }
 );
