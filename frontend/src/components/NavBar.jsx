@@ -18,13 +18,21 @@ const RoleLinks = () => {
   )
 }
 
-export default function NavBar () {
+export default function NavBar() {
   const { user, logout } = useAuth()
   return (
     <nav className="sticky top-0 z-10 bg-white border-b shadow-sm">
       <div className="max-w-6xl mx-auto p-3 flex items-center justify-between">
-        <Link to="/" className="font-bold text-lg text-blue-700">HireWise</Link>
+        {/* Title - Bigger & Bold */}
+        <Link
+          to="/"
+          className="text-2xl md:text-3xl font-extrabold tracking-wide text-blue-700"
+        >
+          HireWise
+        </Link>
+
         <RoleLinks />
+
         <div className="flex items-center gap-3">
           {!user ? (
             <>
@@ -33,7 +41,9 @@ export default function NavBar () {
             </>
           ) : (
             <>
-              <span className="text-sm text-gray-500">Hi, {user.username} ({user.role})</span>
+              <span className="text-sm text-gray-500">
+                Hi, {user.username} ({user.role})
+              </span>
               <button className="btn" onClick={logout}>Logout</button>
             </>
           )}

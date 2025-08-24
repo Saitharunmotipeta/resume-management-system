@@ -30,7 +30,7 @@ app.add_middleware(
 # --- Register Routes ---
 app.include_router(auth.router, prefix="/auth")
 app.include_router(job_routes.router, prefix="/jobs")
-app.include_router(admin.router, prefix="/admin")
+app.include_router(admin.router)
 app.include_router(resume_routes.router, prefix="/resumes", tags=["Resumes"])
 
 # --- DB Setup ---

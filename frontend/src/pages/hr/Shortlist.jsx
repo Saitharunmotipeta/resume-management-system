@@ -1,4 +1,3 @@
-// frontend/src/pages/Shortlist.jsx
 import React, { useEffect, useState } from "react";
 import api from "../../api/axios";
 
@@ -59,49 +58,73 @@ export default function Shortlist() {
     );
   });
 
-  if (loading) return <div className="card">Loading...</div>;
-  if (error) return <div className="card text-red-600">{error}</div>;
+  if (loading) return <div className="card p-6 text-gray-600">Loading...</div>;
+  if (error) return <div className="card p-6 text-red-600">{error}</div>;
 
   return (
-    <div className="space-y-3">
-      <div className="card flex items-center gap-3">
+    <div className="space-y-5 p-6">
+      {/* Filter/Search bar */}
+      <div className="card flex items-center gap-3 p-4 shadow-sm">
         <input
           className="input flex-1"
           placeholder="Filter by job id or job name…"
           value={filters.job}
           onChange={(e) => setFilters({ ...filters, job: e.target.value })}
         />
-        <button className="btn" onClick={load}>Refresh</button>
+        <button className="btn bg-blue-600 hover:bg-blue-700 text-white px-5" onClick={load}>
+          Refresh
+        </button>
       </div>
 
-      {filtered.length === 0 && <div className="card">No shortlisted candidates yet.</div>}
+      {filtered.length === 0 && (
+        <div className="card p-6 text-gray-500 text-center">
+          No shortlisted candidates yet.
+        </div>
+      )}
 
       {filtered.map((r) => (
-        <div key={r.resume_id} className="card p-3 space-y-2">
-          <div className="flex flex-wrap items-center justify-between gap-2">
+        <div
+          key={r.resume_id}
+          className="card p-5 space-y-3 border border-gray-200 shadow-sm hover:shadow-md transition"
+        >
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            {/* Candidate Info */}
             <div>
-              <div className="font-semibold">
-                Resume #{r.resume_id} • Job {r.job_name || r.job_id}
+              <div className="text-lg font-semibold">
+                Resume #{r.resume_id} • {r.job_name || `Job ${r.job_id}`}
               </div>
-              <div className="text-xs text-gray-500">
-                {r.student_email} {r.student_name && <>· {r.student_name}</>}{" "}
-                {r.match_score != null && <>· Match: {r.match_score}</>}
+              <div className="text-sm text-gray-600">
+                {r.student_email}
+                {r.student_name && <> · {r.student_name}</>}
+                {r.match_score != null && <> · Match: {r.match_score}</>}
               </div>
-              <div className="text-sm">
+              <div className="mt-1 text-sm">
                 Status:{" "}
-                <span className={r.scheduled_at ? "text-blue-600" : "text-green-600"}>
+                <span
+                  className={`${
+                    r.scheduled_at ? "text-blue-600" : "text-green-600"
+                  } font-medium`}
+                >
                   {r.scheduled_at ? "Interview scheduled" : "Shortlisted"}
                 </span>
                 {r.scheduled_at && (
-                  <span className="ml-2 px-2 py-0.5 rounded bg-blue-100 text-blue-700">
-                    {new Date(r.scheduled_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
+                  <div className="mt-1 inline-block px-3 py-1 rounded-lg bg-blue-100 text-blue-700 text-xs">
+                    {new Date(r.scheduled_at).toLocaleString(undefined, {
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                    })}
                     {r.mode ? ` • ${r.mode}` : ""} {r.venue ? ` • ${r.venue}` : ""}
-                  </span>
+                  </div>
                 )}
               </div>
-              {r.feedback && <div className="text-xs text-gray-600">Feedback: {r.feedback}</div>}
+              {r.feedback && (
+                <div className="mt-1 text-xs text-gray-500">
+                  Feedback: {r.feedback}
+                </div>
+              )}
             </div>
 
+            {/* Schedule Form */}
             <div className="flex flex-col md:flex-row gap-2 items-start md:items-center">
               {!r.scheduled_at ? (
                 <>
@@ -127,7 +150,7 @@ export default function Shortlist() {
                     onChange={(e) => updateForm(r.resume_id, "venue", e.target.value)}
                   />
                   <button
-                    className="btn bg-green-600 hover:bg-green-700 text-white"
+                    className="btn bg-green-600 hover:bg-green-700 text-white px-5"
                     onClick={() => schedule(r.resume_id)}
                     disabled={savingId === r.resume_id}
                   >
