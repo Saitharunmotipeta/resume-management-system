@@ -40,7 +40,7 @@ export default function JobResumes() {
     setLoading(true);
     setError(null);
     try {
-      const { data } = await api.get(`/jobs/${id}/resumes/analyse`);
+      const { data } = await api.get(`/resumes/job/${id}`);
       setResumes(data);
     } catch (e) {
       setError(e?.response?.data?.detail || "Failed to load resumes");
@@ -69,13 +69,14 @@ export default function JobResumes() {
   // Schedule interview
   const handleSchedule = async () => {
     try {
-      await api.post(`/resumes/interviews/schedule/${id}`, {
-        date: interviewDate,
-        time: interviewTime,
-        mode: interviewMode,
-        location: interviewLocation || null,
-      });
-      setMessage("Interview scheduled successfully!");
+      for (let r of resumes.filter(r => r.shortlisted === "yes")) {
+        await api.post(`/resumes/${r.id}/schedule`, {
+          datetime: `${interviewDate}T${interviewTime}`,
+          mode: interviewMode,
+          venue: interviewLocation || "",
+        });
+      }
+      setMessage("Interview(s) scheduled successfully!");
       setShowModal(false);
       fetchResumes();
     } catch (e) {

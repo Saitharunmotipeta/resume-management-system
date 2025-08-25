@@ -66,9 +66,8 @@ export default function App() {
             <Route path="/hr/jobs/new" element={<PostJob />} />
             <Route path="/hr/jobs/:id/applicants" element={<Applicants />} />
             <Route path="/hr/shortlist" element={<Shortlist />} />
-            <Route path="/jobs/:id" element={<JobDetail />} />
-            <Route path="/jobs/:id/resumes" element={<JobResumes />} />
-
+            <Route path="/hr/jobs/:id" element={<JobDetail />} />
+            <Route path="/hr/jobs/:id/resumes" element={<JobResumes />} />
           </Route>
 
           {/* Manager routes */}

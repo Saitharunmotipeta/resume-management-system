@@ -1,37 +1,54 @@
 import React from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
-
-const RoleLinks = () => {
-  const { user } = useAuth()
-  if (!user) return null
-  const r = user.role
-  return (
-    <div className="flex gap-3 items-center">
-      {r === 'student' && <Link className="link" to="/student">Student</Link>}
-      {r === 'hr' && <Link className="link" to="/hr">HR</Link>}
-      {r === 'manager' && <Link className="link" to="/manager">Manager</Link>}
-      {r === 'admin' && <Link className="link" to="/admin">Admin</Link>}
-      <span className="text-xs text-gray-400">|</span>
-      <Link className="link" to="/jobs">Jobs</Link>
-    </div>
-  )
-}
+import { Home } from 'lucide-react'
 
 export default function NavBar() {
   const { user, logout } = useAuth()
+  const navigate = useNavigate()
+
+  const handleHomeClick = () => {
+    if (!user) return navigate('/jobs')
+    switch (user.role) {
+      case 'student':
+        navigate('/student')
+        break
+      case 'hr':
+        navigate('/hr')
+        break
+      case 'manager':
+        navigate('/manager')
+        break
+      case 'admin':
+        navigate('/admin')
+        break
+      default:
+        navigate('/jobs')
+    }
+  }
+
   return (
     <nav className="sticky top-0 z-10 bg-white border-b shadow-sm">
       <div className="max-w-6xl mx-auto p-3 flex items-center justify-between">
-        {/* Title - Bigger & Bold */}
+        {/* Title */}
         <Link
           to="/"
-          className="text-2xl md:text-3xl font-extrabold tracking-wide text-blue-700"
+          className="text-2xl md:text-3xl font-extrabold tracking-wide text-blue-700 flex items-center gap-2"
         >
           HireWise
         </Link>
 
-        <RoleLinks />
+        {/* Home Icon */}
+        {user && (
+          <button
+            onClick={handleHomeClick}
+            className="flex items-center gap-1 text-blue-700 hover:text-blue-800 transition-colors duration-200"
+            title="Home"
+          >
+            <Home className="w-5 h-5" />
+            <span className="hidden md:inline font-bold">Home</span>
+          </button>
+        )}
 
         <div className="flex items-center gap-3">
           {!user ? (
