@@ -1,5 +1,3 @@
-# app/routers/admin.py
-
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app.database.connection import get_db

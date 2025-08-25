@@ -1,10 +1,9 @@
-# backend/app/main.py
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 
-from app.database.connection import Base, engine  # ensure this import is correct in your project
-from app.models import user, job, resume  # keep model imports if they're needed for metadata
+from app.database.connection import Base, engine
+from app.models import user, job, resume
 from app.routes import auth, job as job_routes, resume as resume_routes, admin
 
 app = FastAPI(

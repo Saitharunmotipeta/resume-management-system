@@ -9,3 +9,5 @@ alembic
 python-multipart 
 pymupdf
 pydantic[email]
+fitz
+json
