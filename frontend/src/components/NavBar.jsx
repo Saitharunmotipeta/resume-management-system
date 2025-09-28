@@ -35,7 +35,7 @@ export default function NavBar() {
           to="/"
           className="text-2xl md:text-3xl font-extrabold tracking-wide text-blue-700 flex items-center gap-2"
         >
-          HireWise
+          TaLyNx
         </Link>
 
         {/* Home Icon */}
