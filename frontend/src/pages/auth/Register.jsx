@@ -4,7 +4,12 @@ import { useAuth } from '../../context/AuthContext.jsx'
 
 export default function Register() {
   const { register, loading, error } = useAuth()
-  const [form, setForm] = useState({ username: '', email: '', password: '', role: 'student' })
+  const [form, setForm] = useState({
+    username: '',
+    email: '',
+    password: '',
+    role: 'student'
+  })
   const navigate = useNavigate()
 
   const onChange = (e) =>
@@ -19,70 +24,90 @@ export default function Register() {
   }
 
   return (
-    <div className="max-w-md mx-auto">
-      <div className="card">
-        <h1 className="text-xl font-semibold mb-2">Register</h1>
-        <form className="space-y-3" onSubmit={onSubmit}>
-          <div>
-            <label className="label">Username</label>
-            <input
-              name="username"
-              className="input"
-              value={form.username}
-              onChange={onChange}
-              required
-            />
-          </div>
-          <div>
-            <label className="label">Email</label>
-            <input
-              name="email"
-              type="email"
-              className="input"
-              value={form.email}
-              onChange={onChange}
-              required
-            />
-          </div>
-          <div>
-            <label className="label">Password</label>
-            <input
-              name="password"
-              type="password"
-              className="input"
-              value={form.password}
-              onChange={onChange}
-              required
-            />
-          </div>
-          <div>
-            <label className="label">Role</label>
-            <select
-              name="role"
-              className="input"
-              value={form.role}
-              onChange={onChange}
-            >
-              <option value="student">Student</option>
-              <option value="hr">HR</option>
-              <option value="manager">Manager</option>
-              <option value="admin">Admin</option>
-            </select>
-          </div>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+      <div className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-2 rounded-2xl overflow-hidden border border-gray-300 shadow-xl bg-white transition">
 
-          {/* ✅ Safe error rendering */}
-          {error && (
-            <div className="text-red-600 text-sm">
-              {Array.isArray(error)
-                ? error.map((err, idx) => <div key={idx}>{err.msg}</div>)
-                : (error.msg || String(error))}
+        {/* Left Side - Register Form */}
+        <div className="p-8 sm:p-10 flex flex-col justify-center">
+          <h1 className="text-2xl font-semibold text-gray-800 mb-6">Create Your Account</h1>
+
+          <form className="space-y-5" onSubmit={onSubmit}>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Username</label>
+              <input
+                name="username"
+                value={form.username}
+                onChange={onChange}
+                required
+                className="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:ring-purple-500 focus:border-purple-500"
+              />
             </div>
-          )}
 
-          <button className="btn w-full" disabled={loading}>
-            {loading ? 'Creating...' : 'Create Account'}
-          </button>
-        </form>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Email</label>
+              <input
+                type="email"
+                name="email"
+                value={form.email}
+                onChange={onChange}
+                required
+                className="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:ring-purple-500 focus:border-purple-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Password</label>
+              <input
+                type="password"
+                name="password"
+                value={form.password}
+                onChange={onChange}
+                required
+                className="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:ring-purple-500 focus:border-purple-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Role</label>
+              <select
+                name="role"
+                value={form.role}
+                onChange={onChange}
+                className="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:ring-purple-500 focus:border-purple-500"
+              >
+                <option value="student">Student</option>
+                <option value="hr">HR</option>
+                <option value="manager">Manager</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+
+            {/* Error */}
+            {error && (
+              <div className="text-red-600 text-sm">
+                {Array.isArray(error)
+                  ? error.map((err, idx) => <div key={idx}>{err.msg}</div>)
+                  : (error.msg || String(error))}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              className="w-full py-2 px-4 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-md shadow transition"
+              disabled={loading}
+            >
+              {loading ? 'Creating...' : 'Create Account'}
+            </button>
+          </form>
+        </div>
+
+        {/* Right Side - Welcome Description */}
+        <div className="hidden md:flex flex-col justify-center items-center bg-gradient-to-br from-indigo-700 to-pink-600 text-white p-10">
+          <h2 className="text-4xl font-bold mb-4">Join Us 🚀</h2>
+          <p className="text-base text-center max-w-sm leading-relaxed">
+            Create your account to access personalized dashboards, manage candidates, and be part of a smarter hiring experience.
+          </p>
+        </div>
       </div>
     </div>
   )
