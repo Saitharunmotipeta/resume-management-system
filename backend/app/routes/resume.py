@@ -1,26 +1,22 @@
-# backend/app/routes/resume.py
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends, Body
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime
-import fitz  # PyMuPDF
+import fitz 
 import json
 
-from app.database.connection import get_db
-from app.models.resume import Resume
-from app.models.job import Job
-from app.models.user import User, UserRole
-from app.models.interview import Interview
-from app.schemas.resume import ResumeOut
-from app.services.gemini import match_resume_to_job
-from app.auth.auth_utils import get_current_user, require_role
-from app.schemas.interview import ScheduleRequest
+from ..database.connection import get_db
+from ..models.resume import Resume
+from ..models.job import Job
+from ..models.user import User, UserRole
+from ..models.interview import Interview
+from ..schemas.resume import ResumeOut
+from ..services.gemini import match_resume_to_job
+from ..auth.auth_utils import get_current_user, require_role
+from ..schemas.interview import ScheduleRequest
 
 router = APIRouter(tags=["Resumes"])
 
-# -------------------------------
-# Upload resume — only students
-# -------------------------------
 @router.post("/upload", response_model=dict)
 def upload_resume(
     file: UploadFile = File(...),
@@ -75,10 +71,6 @@ def upload_resume(
         "summary": resume.match_summary
     }
 
-
-# -------------------------------
-# HR/Manager/Admin — view resumes for a job (optionally shortlisted-only)
-# -------------------------------
 @router.get("/job/{job_id}", response_model=List[ResumeOut])
 def get_resumes_for_job(
     job_id: int,
@@ -99,10 +91,6 @@ def get_resumes_for_job(
 
     return resumes
 
-
-# -------------------------------
-# Re-run AI match — HR only
-# -------------------------------
 @router.post("/match/{resume_id}")
 def match_resume_again(
     resume_id: int,
@@ -128,10 +116,6 @@ def match_resume_again(
 
     return {"msg": "Re-matched successfully", "score": resume.match_score}
 
-
-# -------------------------------
-# Shortlist & Reject — HR only
-# -------------------------------
 @router.post("/shortlist/{resume_id}")
 def shortlist_resume(
     resume_id: int,
@@ -159,10 +143,6 @@ def reject_resume(
     db.commit()
     return {"msg": f"Resume ID {resume_id} rejected"}
 
-
-# -------------------------------
-# Delete Resume — Student (own) or Admin
-# -------------------------------
 @router.delete("/{resume_id}")
 def delete_resume(
     resume_id: int,
@@ -180,10 +160,6 @@ def delete_resume(
     db.commit()
     return {"msg": f"Resume ID {resume_id} deleted"}
 
-
-# -------------------------------
-# Student — My Resumes
-# -------------------------------
 @router.get("/my", response_model=List[ResumeOut])
 def get_my_resumes(
     db: Session = Depends(get_db),
@@ -195,10 +171,6 @@ def get_my_resumes(
         resume.match_flags = json.loads(resume.match_flags or "[]")
     return resumes
 
-
-# -------------------------------
-# Student — My Applications (with interview info)
-# -------------------------------
 @router.get("/applications/me")
 def get_my_applications(
     db: Session = Depends(get_db),
@@ -227,10 +199,6 @@ def get_my_applications(
 
     return result
 
-
-# -------------------------------
-# HR/Manager/Admin — View all shortlisted resumes with interview info
-# -------------------------------
 @router.get("/shortlisted")
 def get_shortlisted(
     db: Session = Depends(get_db),
@@ -267,10 +235,6 @@ def get_shortlisted(
 
     return result
 
-
-# -------------------------------
-# Schedule Interview — HR/Manager/Admin (batch by job)
-# -------------------------------
 @router.post("/interviews/schedule/{job_id}")
 def schedule_interview(
     job_id: int,
@@ -315,10 +279,6 @@ def schedule_interview(
         "location": schedule.location
     }
 
-
-# -------------------------------
-# Schedule Interview — single resume (called by frontend schedule button)
-# -------------------------------
 @router.post("/{resume_id}/schedule")
 def schedule_interview_single(
     resume_id: int,
