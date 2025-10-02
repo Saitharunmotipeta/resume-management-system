@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
@@ -35,6 +36,7 @@ app.include_router(admin.router)
 app.include_router(resume_routes.router, prefix="/resumes", tags=["Resumes"])
 
 # --- DB Setup ---
+# This will create tables if they don't exist. Comment out in production after first deploy if using migrations.
 Base.metadata.create_all(bind=engine)
 # Base.metadata.drop_all(bind=engine)
 print("✅ All tables created.")
@@ -74,3 +76,15 @@ def custom_openapi():
     return app.openapi_schema
 
 app.openapi = custom_openapi
+
+# --- Optional: health check endpoint ---
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+# --- Entry point for Uvicorn/Gunicorn ---
+if __name__ == "__main__":
+    # Use Render-provided port if available
+    port = int(os.environ.get("PORT", 8000))
+    import uvicorn
+    uvicorn.run("backend.app:app", host="0.0.0.0", port=port, reload=True)
