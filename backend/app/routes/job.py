@@ -3,13 +3,12 @@ from datetime import datetime
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from app.database.connection import get_db
-from app.models.job import Job
-from app.schemas.job import JobCreate, JobOut, JobUpdate
-from app.auth.auth_utils import require_role
-from app.models.user import User, UserRole
+from ..database.connection import get_db
+from ..models.job import Job
+from ..schemas.job import JobCreate, JobOut, JobUpdate
+from ..auth.auth_utils import require_role
+from ..models.user import User, UserRole
 
-# ✅ Removed router prefix here, main.py will handle prefix
 router = APIRouter(tags=["Jobs"])
 
 @router.post("/", response_model=JobOut)
