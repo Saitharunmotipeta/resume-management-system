@@ -1,17 +1,1 @@
-gunicorn
-uvicorn[standard]
-fastapi
-passlib[bcrypt] 
-python-jose[cryptography] 
-python-dotenv
-sqlalchemy 
-psycopg2-binary 
-alembic
-python-multipart 
-pymupdf
-pydantic[email]
-<<<<<<< HEAD
-fitz
-json
-=======
->>>>>>> 65d1b16214c907a085c4fd23d9873240a52a9260
+
