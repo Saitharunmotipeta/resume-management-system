@@ -3,9 +3,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 
-from app.database.connection import Base, engine
-from app.models import user, job, resume
-from app.routes import auth, job as job_routes, resume as resume_routes, admin
+from .database.connection import Base, engine
+from .models import user, job, resume
+from .routes import auth, job as job_routes, resume as resume_routes, admin
 
 app = FastAPI(
     title="HireWise API",
