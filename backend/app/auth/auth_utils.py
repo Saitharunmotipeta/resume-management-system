@@ -6,20 +6,15 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
-from app.database.connection import get_db
-from app.models.user import User, UserRole
-from app.auth.jwt_handler import decode_access_token  # single source
+from ..database.connection import get_db
+from ..models.user import User, UserRole
+from ..auth.jwt_handler import decode_access_token  
 
-# Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# OAuth2 scheme (leading slash matters for Swagger)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
-# --------------------
-# Password utilities
-# --------------------
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
@@ -28,9 +23,6 @@ def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 
 
-# --------------------
-# Current user fetch
-# --------------------
 def get_current_user(
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db),
@@ -64,9 +56,6 @@ def get_current_user(
     return user
 
 
-# --------------------
-# Role-based access
-# --------------------
 def require_role(roles: list[UserRole]):
     def role_checker(current_user: User = Depends(get_current_user)):
         # Normalize role to lowercase string
