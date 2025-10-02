@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, Text, Float, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from datetime import datetime
-from app.database.connection import Base
+from ..database.connection import Base
 
 
 class Resume(Base):
