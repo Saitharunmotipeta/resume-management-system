@@ -26,7 +26,7 @@ import MyApplications from './pages/student/MyApplications.jsx'
 // Simple fallback pages
 const UnauthorizedPage = () => (
   <div className="card text-red-500">
-    <h2 className="text-xl font-bold">🚫 Unauthorized</h2>
+    <h2 className="text-xl font-bold">🚫 Unauthorized you cannot access it </h2>
     <p>You do not have permission to access this page.</p>
   </div>
 )
