@@ -58,3 +58,5 @@ cd frontend
 npm install
 npm run dev
 ```
+
+Still open to feedback...
