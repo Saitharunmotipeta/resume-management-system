@@ -1,5 +1,3 @@
-#HireWise - 737017
-
 **AI-Powered Resume Screening & Job Management Platform**
 
 HireWise is a role-based platform that simplifies the recruitment process. It leverages AI to analyze resumes, assigns scoring to candidates, and streamlines filtering for recruiters. Job posting, interview scheduling, and analytics dashboards make hiring smarter and faster.
